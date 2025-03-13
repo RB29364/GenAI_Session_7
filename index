@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Response Comparison Tool</title>
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f5f5f7;
+      color: #333;
+      line-height: 1.6;
+    }
+    /* Layout */
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+    /* Header */
+    header {
+      background-color: #fff;
+      padding: 1rem 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background-color: #fff;
+      border-right: 1px solid #e0e0e0;
+      padding: 1rem;
+      position: fixed;
+      top: 60px;
+      bottom: 0;
+      overflow-y: auto;
+    }
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .sidebar-item:hover {
+      background-color: #f0f0f0;
+    }
+    .sidebar-item.active {
+      background-color: #f0f0f0;
+      font-weight: 600;
+    }
+    .sidebar-item-icon {
+      margin-right: 10px;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Main content */
+    .main-content {
+      flex: 1;
+      margin-left: 250px;
+      margin-top: 60px;
+      padding: 2rem;
+    }
+    /* Prompt input */
+    .prompt-container {
+      margin-bottom: 1.5rem;
+    }
+    .prompt-input {
+      display: flex;
+      width: 100%;
+    }
+    .prompt-input input {
+      flex: 1;
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 4px 0 0 4px;
+      font-size: 1rem;
+    }
+    .prompt-input button {
+      padding: 0.75rem 1.5rem;
+      background-color: #000;
+      color: #fff;
+      border: none;
+      border-radius: 0 4px 4px 0;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s;
+    }
+    .prompt-input button:hover {
+      background-color: #333;
+    }
+    /* Category tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 1.5rem;
+    }
+    .tab {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      border-bottom: 2px solid #000;
+      font-weight: 600;
+    }
+    /* Table */
+    .table-container {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      background-color: #f9f9f9;
+      text-align: left;
+      padding: 1rem;
+      font-weight: 600;
+    }
+    td {
+      padding: 1rem;
+      border-top: 1px solid #e0e0e0;
+    }
+    .model-cell {
+      display: flex;
+      align-items: center;
+    }
+    .model-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      font-weight: 600;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      background-color: #000;
+      color: #fff;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      margin-right: 0.25rem;
+    }
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #000;
+      color: #fff;
+      font-weight: 600;
+    }
+    /* Comparison grid */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+    .comparison-card {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 1.5rem;
+    }
+    .comparison-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .comparison-scores {
+      display: flex;
+      gap: 1rem;
+    }
+    .score-item {
+      font-size: 0.875rem;
+    }
+    .score-item span:last-child {
+      font-weight: 600;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+    }
+    /* Button styles */
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background-color: #000;
+      color: #fff;
+      border: none;
+    }
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid #ccc;
+    }
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AI Response Comparison</h1>
+    <div class="header-actions">
+      <button class="btn btn-primary">Best AI</button>
+      <button class="btn btn-outline">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="sidebar">
+      <div class="sidebar-item">
+        <div class="sidebar-item-icon">A</div>
+        <span>Prompt</span>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"></path>
+            <path d="M8 4H6a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2"></path>
+            <rect width="4" height="16" x="10" y="4" rx="1"></rect>
+          </svg>
+        </div>
+        <span>Multiple AI responses</span>
+      </div>
+      <div class="sidebar-item active">
+        <div class="sidebar-item-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <path d="m9 11 3 3L22 4"></path>
+          </svg>
+        </div>
+        <span>Side-by-side AI</span>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
+          </svg>
+        </div>
+        <span>Response scoring</span>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" x2="21" y1="6" y2="6"></line>
+            <line x1="8" x2="21" y1="12" y2="12"></line>
+            <line x1="8" x2="21" y1="18" y2="18"></line>
+            <line x1="3" x2="3" y1="6" y2="6"></line>
+            <line x1="3" x2="3" y1="12" y2="12"></line>
+            <line x1="3" x2="3" y1="18" y2="18"></line>
+          </svg>
+        </div>
+        <span>Credibility ranking</span>
+      </div>
+      <div class="sidebar-item">
+        <div class="sidebar-item-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m17 2 4 4-4 4"></path>
+            <path d="M3 11v-1a4 4 0 0 1 4-4h14"></path>
+            <path d="m7 22-4-4 4-4"></path>
+            <path d="M21 13v1a4 4 0 0 1-4 4H3"></path>
+          </svg>
+        </div>
+        <span>Context retention</span>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="prompt-container">
+        <div class="prompt-input">
+          <input type="text" placeholder="Enter your prompt here" id="promptInput">
+          <button id="generateBtn">Generate Responses</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="smart-ai">Smart AI</div>
+        <div class="tab" data-tab="customer">Customer</div>
+        <div class="tab" data-tab="best-ai">Best AI model</div>
+      </div>
+
+      <div class="loading" id="loadingIndicator">
+        <p>Generating AI responses...</p>
+      </div>
+
+      <div class="table-container" id="responsesTable" style="display: none;">
+        <table>
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>AI selection</th>
+              <th>Model</th>
+              <th style="text-align: right;">Score</th>
+            </tr>
+          </thead>
+          <tbody id="responseRows">
+            <!-- Rows will be added by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="comparison-grid" id="comparisonGrid" style="display: none;">
+        <!-- Comparison cards will be added by JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Elements
+      const promptInput = document.getElementById('promptInput');
+      const generateBtn = document.getElementById('generateBtn');
+      const loadingIndicator = document.getElementById('loadingIndicator');
+      const responsesTable = document.getElementById('responsesTable');
+      const responseRows = document.getElementById('responseRows');
+      const comparisonGrid = document.getElementById('comparisonGrid');
+      const tabs = document.querySelectorAll('.tab');
+      const sidebarItems = document.querySelectorAll('.sidebar-item');
+
+      // Sample data
+      const aiModels = [
+        { 
+          id: 1, 
+          name: 'Model A', 
+          response: 'This is a sample response from Model A that demonstrates context retention abilities. The model maintains awareness of the prompt\'s requirements throughout the response and provides consistent information that aligns with the user\'s initial query.',
+          scores: {
+            credibility: 8,
+            context: 9,
+            relevance: 8,
+            accuracy: 7
